@@ -58,33 +58,7 @@
             0 20px 60px rgba(0,0,0,.45);
     }
 
-    .status {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        padding: 13px 15px;
-
-        background: #111318;
-        border: 1px solid #2b2f38;
-
-        border-radius: 12px;
-
-        color: #d7dae0;
-        font-size: 14px;
-
-        margin-bottom: 22px;
-    }
-
-    .status-dot {
-        width: 9px;
-        height: 9px;
-
-        background: #777;
-        border-radius: 50%;
-
-        flex-shrink: 0;
-    }
+ 
 
     .step {
         position: relative;
@@ -179,12 +153,7 @@
         box-shadow: 0 6px 20px rgba(59,130,246,.18);
     }
 
-    #terminalButton {
-        margin-top: 9px;
 
-        background: #30343d;
-        color: #e5e7eb;
-    }
 
     #assistant {
         background: #8b5cf6;
@@ -273,9 +242,6 @@
 <div class="panel">
 
 
-
-    <!-- STEP 1 -->
-
     <div class="step">
 
         <div class="step-header">
@@ -321,20 +287,13 @@
 
         </div>
 
-        <div class="step-description">
-            Copy this command, open your Codespace terminal, and paste it there.
-        </div>
 
         <div class="command">
             mkdir -p /workspaces/omniroute-cloud/data && DATA_DIR=/workspaces/omniroute-cloud/data nohup /home/codespace/nvm/current/bin/omniroute &gt; /workspaces/omniroute-cloud/data/omniroute.log 2&gt;&amp;1 &amp;
         </div>
 
         <button id="copyButton" onclick="copyCommand()">
-            📋 COPY COMMAND
-        </button>
-
-        <button id="terminalButton" onclick="openTerminal()">
-            💻 OPEN CODESPACE
+            📋 COPY COMMAND and Paste
         </button>
 
     </div>
@@ -428,18 +387,39 @@ const HEADERS = {
 /* =========================================
    START CODESPACE
    ========================================= */
-
 async function startCodespace() {
 
+    /*
+       STEP 1:
+       Open GitHub/Codespace first.
+
+       If the browser is NOT logged into GitHub,
+       GitHub will automatically redirect to its login page.
+    */
+
+    window.open(
+        "https://github.com/login?return_to="
+        + encodeURIComponent(CODESPACE_URL),
+        "_blank"
+    );
+
+
     setStatus(
-        "Starting Codespace...",
+        "🟡 Opening GitHub and starting Codespace...",
         "working"
     );
+
+
+    /*
+       STEP 2:
+       Start the Codespace through the GitHub API.
+    */
 
     const timer =
         document.getElementById("timer");
 
     timer.classList.remove("hidden");
+
 
     try {
 
@@ -453,39 +433,48 @@ async function startCodespace() {
             }
         );
 
+
         if (!response.ok) {
 
             const error =
                 await response.text();
 
             setStatus(
-                "Codespace start failed",
+                "❌ Could not start Codespace",
                 "stopped"
             );
 
-            alert(error);
+            alert(
+                "GitHub could not start the Codespace.\n\n"
+                + "If you are in Incognito, log into GitHub in the tab that just opened, then press START CODESPACE again."
+            );
 
             return;
         }
 
+
         setStatus(
-            "Codespace starting...",
+            "🟢 Codespace starting...",
             "working"
         );
 
+
         startCountdown();
+
 
     } catch (error) {
 
         setStatus(
-            "Connection error",
+            "❌ GitHub connection failed",
             "stopped"
         );
 
-        alert(error);
+        alert(
+            "Could not contact GitHub.\n\n"
+            + error
+        );
     }
 }
-
 
 /* =========================================
    7 SECOND COUNTDOWN
@@ -562,18 +551,6 @@ async function copyCommand() {
 }
 
 
-/* =========================================
-   OPEN CODESPACE
-   ========================================= */
-
-function openTerminal() {
-
-    window.open(
-        CODESPACE_URL,
-        "_blank"
-    );
-
-}
 
 
 /* =========================================
@@ -596,11 +573,6 @@ function openAssistant() {
 
 async function stopCodespace() {
 
-    setStatus(
-        "Stopping Codespace...",
-        "working"
-    );
-
     try {
 
         const response = await fetch(
@@ -618,30 +590,16 @@ async function stopCodespace() {
             const error =
                 await response.text();
 
-            setStatus(
-                "Stop failed",
-                "stopped"
-            );
-
             alert(error);
 
             return;
         }
-
-        setStatus(
-            "Codespace stopped",
-            "stopped"
-        );
 
         document.getElementById("timer").innerText =
             "🔴 Session stopped.";
 
     } catch (error) {
 
-        setStatus(
-            "Connection error",
-            "stopped"
-        );
 
         alert(error);
     }
